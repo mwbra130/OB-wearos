@@ -28,14 +28,21 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Run protocol and watch tests, lint, and debug build
-        run: .\gradlew.bat :protocol:test :wear:testDebugUnitTest :wear:lintRelease :wear:assembleDebug
+      - name: Run protocol and watch tests, lint, and builds
+        run: .\gradlew.bat :protocol:test :wear:testDebugUnitTest :wear:lintRelease :wear:assembleDebug :wear:assembleRelease
 
       - name: Upload unsigned debug APK
         uses: actions/upload-artifact@v4
         with:
           name: watch-debug-apk
           path: wear/build/outputs/apk/debug/wear-debug-unsigned.apk
+          if-no-files-found: error
+
+      - name: Upload unsigned release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: watch-release-apk
+          path: wear/build/outputs/apk/release/wear-release-unsigned.apk
           if-no-files-found: error
 
   signed-watch:

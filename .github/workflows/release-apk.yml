@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   attach-apk:
-    name: Build and attach unsigned watch APK
+    name: Build and attach unsigned watch release APK
     runs-on: windows-latest
     steps:
       - name: Check out the release tag
@@ -32,14 +32,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Build unsigned debug APK
-        run: .\gradlew.bat :wear:assembleDebug
+      - name: Build unsigned release APK (minified, optimized)
+        run: .\gradlew.bat :wear:assembleRelease
 
       - name: Name the APK after the release
         shell: pwsh
         run: |
           $name = "OpenBubblesWear-${{ env.TAG }}-unsigned.apk"
-          Copy-Item "wear/build/outputs/apk/debug/wear-debug-unsigned.apk" $name
+          Copy-Item "wear/build/outputs/apk/release/wear-release-unsigned.apk" $name
           echo "APK_NAME=$name" >> $env:GITHUB_ENV
 
       - name: Attach APK to the release
