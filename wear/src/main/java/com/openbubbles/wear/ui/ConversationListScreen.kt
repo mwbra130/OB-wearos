@@ -25,6 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.wear.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material3.AppScaffold
@@ -43,6 +45,7 @@ fun ConversationListScreen(
     onDismissNotice: () -> Unit
 ) {
     val listState = rememberScalingLazyListState()
+    val pullRefreshState = rememberPullToRefreshState()
     val conversations = remember(state.conversations) { state.conversationsForDisplay }
     val unreadCount = conversations.count { it.unread }
 
@@ -52,6 +55,12 @@ fun ConversationListScreen(
                 FullScreenLoading("Looking for your phone…")
                 return@Box
             }
+            PullToRefreshBox(
+                isRefreshing = state.syncing,
+                onRefresh = onSync,
+                state = pullRefreshState,
+                modifier = Modifier.fillMaxSize()
+            ) {
             ScalingLazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
@@ -102,14 +111,6 @@ fun ConversationListScreen(
                     }
                 }
 
-                item(key = "phone_status") {
-                    PhoneStatusCard(
-                        state = state,
-                        unreadCount = unreadCount,
-                        onSync = onSync
-                    )
-                }
-
                 item {
                     TextButton(
                         onClick = onOpenSettings,
@@ -134,63 +135,8 @@ fun ConversationListScreen(
                     SectionHeader(text = WATCH_APP_VERSION)
                 }
             }
+            }
         }
-    }
-}
-
-@Composable
-private fun PhoneStatusCard(
-    state: WatchState,
-    unreadCount: Int,
-    onSync: () -> Unit
-) {
-    val scheme = MaterialTheme.colorScheme
-    val statusColor = when {
-        !state.phoneOnline -> scheme.error
-        !state.directBridge -> scheme.error
-        !state.relayEnabled -> scheme.tertiary
-        else -> scheme.primary
-    }
-    val title = when {
-        state.syncing -> "Syncing…"
-        !state.phoneOnline -> "Phone offline"
-        !state.directBridge -> "Wear patch unavailable"
-        !state.relayEnabled -> "Relay paused on phone"
-        else -> "Connected to phone"
-    }
-    val detail = when {
-        !state.phoneOnline && state.lastSyncAt > 0L ->
-            "Showing the last synced conversations. Tap to retry."
-
-        !state.phoneOnline ->
-            "Open the bridge app on your phone."
-
-        !state.directBridge ->
-            state.backendState.ifBlank { "Enable the Wear patch in OpenBubbles and sync again." }
-
-        !state.relayEnabled ->
-            "New messages stay on the phone until relay is resumed."
-
-        state.queuedCount > 0 ->
-            "Replies send through OpenBubbles. ${state.queuedCount} ${if (state.queuedCount == 1) "message is" else "messages are"} waiting for the phone."
-        unreadCount > 0 ->
-            "$unreadCount unread ${if (unreadCount == 1) "chat" else "chats"} · Tap to refresh"
-
-        else -> "Tap to refresh"
-    }
-
-    Card(
-        onClick = onSync,
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = scheme.surfaceContainerLow
-        )
-    ) {
-        StatusLine(
-            color = statusColor,
-            title = title,
-            detail = detail
-        )
     }
 }
 
