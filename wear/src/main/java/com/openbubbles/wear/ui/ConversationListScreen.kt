@@ -19,14 +19,22 @@ import androidx.wear.compose.material3.TextButton
 import androidx.wear.compose.material3.TimeText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
-import androidx.wear.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.wear.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material3.AppScaffold
@@ -45,7 +53,6 @@ fun ConversationListScreen(
     onDismissNotice: () -> Unit
 ) {
     val listState = rememberScalingLazyListState()
-    val pullRefreshState = rememberPullToRefreshState()
     val conversations = remember(state.conversations) { state.conversationsForDisplay }
     val unreadCount = conversations.count { it.unread }
 
@@ -55,15 +62,42 @@ fun ConversationListScreen(
                 FullScreenLoading("Looking for your phone…")
                 return@Box
             }
-            PullToRefreshBox(
-                isRefreshing = state.syncing,
-                onRefresh = onSync,
-                state = pullRefreshState,
-                modifier = Modifier.fillMaxSize()
-            ) {
+            var pullDistance by remember { mutableStateOf(0f) }
+            var pullTriggered by remember { mutableStateOf(false) }
+            val pullThresholdPx = with(LocalDensity.current) { 56.dp.toPx() }
+            LaunchedEffect(state.syncing) {
+                if (!state.syncing) pullTriggered = false
+            }
+            val pullToRefreshConnection = object : NestedScrollConnection {
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    if (source == NestedScrollSource.UserInput &&
+                        listState.firstVisibleItemIndex == 0 &&
+                        listState.firstVisibleItemScrollOffset == 0 &&
+                        available.y > 0f
+                    ) {
+                        pullDistance += available.y
+                        if (pullDistance > pullThresholdPx && !pullTriggered) {
+                            pullTriggered = true
+                            onSync()
+                        }
+                    }
+                    return Offset.Zero
+                }
+
+                override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                    pullDistance = 0f
+                    return Velocity.Zero
+                }
+            }
             ScalingLazyColumn(
                 state = listState,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .nestedScroll(pullToRefreshConnection),
                 autoCentering = null,
                 contentPadding = PaddingValues(
                     start = 8.dp,
@@ -73,6 +107,17 @@ fun ConversationListScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
+                if (pullTriggered) {
+                    item(key = "refreshing") {
+                        Text(
+                            text = if (state.syncing) "Refreshing…" else "Syncing…",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                    }
+                }
+
                 val notice = state.error
                 if (notice != null) {
                     item {
@@ -134,7 +179,6 @@ fun ConversationListScreen(
                 item {
                     SectionHeader(text = WATCH_APP_VERSION)
                 }
-            }
             }
         }
     }
