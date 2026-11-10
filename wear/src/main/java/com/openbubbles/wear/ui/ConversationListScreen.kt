@@ -11,19 +11,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.CardDefaults
-import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TextButton
 import androidx.wear.compose.material3.TimeText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -50,8 +45,6 @@ fun ConversationListScreen(
     val listState = rememberScalingLazyListState()
     val conversations = remember(state.conversations) { state.conversationsForDisplay }
     val unreadCount = conversations.count { it.unread }
-    var groupsOnly by remember { mutableStateOf(false) }
-    val visibleConversations = conversations.filter { !groupsOnly || it.isGroup }
 
     AppScaffold(timeText = { TimeText() }) {
         Box(Modifier.fillMaxSize()) {
@@ -62,23 +55,15 @@ fun ConversationListScreen(
             ScalingLazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
+                autoCentering = null,
                 contentPadding = PaddingValues(
                     start = 8.dp,
                     end = 8.dp,
                     top = 30.dp,
-                    bottom = 44.dp
+                    bottom = 12.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                item {
-                    ListHeader {
-                        Text(
-                            text = "Messages",
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-
                 val notice = state.error
                 if (notice != null) {
                     item {
@@ -90,29 +75,7 @@ fun ConversationListScreen(
                     }
                 }
 
-                item {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        TextButton(
-                            onClick = { groupsOnly = false },
-                            modifier = Modifier.weight(1f)
-                        ) { Text(if (!groupsOnly) "All ✓" else "All", maxLines = 1, softWrap = false) }
-                        TextButton(
-                            onClick = { groupsOnly = true },
-                            modifier = Modifier.weight(1.4f)
-                        ) { Text(if (groupsOnly) "Groups ✓" else "Groups", maxLines = 1, softWrap = false) }
-                    }
-                }
-
-                if (groupsOnly && visibleConversations.isEmpty()) {
-                    item {
-                        Card(onClick = onSync, modifier = Modifier.fillMaxWidth()) {
-                            Text("No group chats yet", style = MaterialTheme.typography.titleSmall)
-                            Text(if (state.directBridge) "Use Find chats in OpenBubbles below to load existing groups."
-                                else "Open patched OpenBubbles and enable the Wear bridge, then find chats below.",
-                                style = MaterialTheme.typography.bodyExtraSmall)
-                        }
-                    }
-                } else if (conversations.isEmpty()) {
+                if (conversations.isEmpty()) {
                     item {
                         EmptyStateCard(
                             directBridge = state.directBridge,
@@ -122,7 +85,7 @@ fun ConversationListScreen(
                     }
                 } else {
                     items(
-                        items = visibleConversations,
+                        items = conversations,
                         key = { it.id }
                     ) { summary ->
                         ConversationCard(
@@ -133,20 +96,9 @@ fun ConversationListScreen(
                     }
                 }
 
-                item { ChatDiscoveryControls(state) }
-
                 if (state.error == null && state.info != null) {
                     item(key = "info_notice") {
                         NoticeCard(message = state.info, isError = false, onDismiss = onDismissNotice)
-                    }
-                }
-
-                item {
-                    Button(
-                        onClick = onFindChat,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Find a chat")
                     }
                 }
 
@@ -179,13 +131,7 @@ fun ConversationListScreen(
                 }
 
                 item {
-                    SectionHeader(
-                        text = if (state.phoneName.isNotBlank()) {
-                            "${state.phoneName} · Watch ${WATCH_APP_VERSION}"
-                        } else {
-                            "Watch $WATCH_APP_VERSION"
-                        }
-                    )
+                    SectionHeader(text = WATCH_APP_VERSION)
                 }
             }
         }
@@ -271,7 +217,7 @@ private fun EmptyStateCard(
                         "Open the bridge app on your phone, then sync again."
 
                     directBridge ->
-                        "Use Find chats in OpenBubbles, or choose a contact to start a conversation."
+                        "Choose a contact to start a conversation, or tap to sync."
 
                     else ->
                         "Enable the Wear patch in OpenBubbles to load conversations."
