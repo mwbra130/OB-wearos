@@ -17,9 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.EmojiEmotions
-import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material.icons.filled.Mic
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.CardDefaults
@@ -47,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
@@ -613,30 +611,21 @@ private fun ChatActions(
                     enabled = state.relayEnabled && !sending,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.EmojiEmotions,
-                        contentDescription = "Send emoji"
-                    )
+                    Text("😀", fontSize = 20.sp)
                 }
                 FilledTonalButton(
                     onClick = { onCompose(ComposerInputMode.Voice) },
                     enabled = state.relayEnabled && !sending,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Mic,
-                        contentDescription = "Voice message"
-                    )
+                    Text("🎤", fontSize = 20.sp)
                 }
                 FilledTonalButton(
                     onClick = { onCompose(ComposerInputMode.Keyboard) },
                     enabled = state.relayEnabled && !sending,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Keyboard,
-                        contentDescription = "Type message"
-                    )
+                    Text("⌨️", fontSize = 20.sp)
                 }
             }
         } else {

@@ -21,8 +21,8 @@ android {
         applicationId = rootProject.extra["companionApplicationId"] as String
         minSdk = 30
         targetSdk = 35
-        versionCode = 26
-        versionName = "0.1.0"
+        versionCode = 27
+        versionName = "0.1.1"
     }
 
     signingConfigs {
@@ -88,7 +88,6 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material:material-icons-core")
-    implementation("androidx.compose.material:material-icons-extended")
 
     implementation("androidx.wear.compose:compose-material3:1.5.4")
     implementation("androidx.wear.compose:compose-foundation:1.5.4")
