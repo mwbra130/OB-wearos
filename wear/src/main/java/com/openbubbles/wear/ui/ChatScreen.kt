@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.EmojiEmotions
+import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.Mic
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.CardDefaults
@@ -61,8 +64,11 @@ fun ChatScreen(
     state: WatchState,
     threadId: String,
     reverseReplySwipe: Boolean,
+    showChatStatus: Boolean,
+    timesAlways: Boolean,
+    compactChatHeader: Boolean,
     onBack: () -> Unit,
-    onReply: () -> Unit,
+    onCompose: (ComposerInputMode) -> Unit,
     onReplyToMessage: (String) -> Unit,
     onOpenPhone: () -> Unit,
     onOpenMedia: (String) -> Unit,
@@ -103,10 +109,12 @@ fun ChatScreen(
             ScalingLazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
+                autoCentering = if (compactChatHeader) null
+                    else androidx.wear.compose.foundation.lazy.AutoCenteringParams(),
                 contentPadding = PaddingValues(
                     start = 8.dp,
                     end = 8.dp,
-                    top = 30.dp,
+                    top = if (compactChatHeader) 10.dp else 30.dp,
                     bottom = 44.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -166,7 +174,8 @@ fun ChatScreen(
                         thread = thread,
                         hasSummary = summary != null,
                         requesting = requesting,
-                        canReply = canReply
+                        canReply = canReply,
+                        showStatusLine = showChatStatus
                     )
                 }
 
@@ -206,6 +215,7 @@ fun ChatScreen(
                     ) { message ->
                         MessageBubble(
                             message = message,
+                            timesAlways = timesAlways,
                             reverseReplySwipe = reverseReplySwipe,
                             media = message.mediaId?.let { state.media[it] },
                             requestingMedia = message.mediaId != null &&
@@ -237,7 +247,7 @@ fun ChatScreen(
                         threadId = threadId,
                         canReply = canReply,
                         requesting = requesting,
-                        onReply = onReply,
+                        onCompose = onCompose,
                         onOpenPhone = onOpenPhone,
                         onSendQueued = onSendQueued,
                         onRefresh = { WatchRepository.requestThread(threadId) },
@@ -271,7 +281,8 @@ private fun ChatStatus(
     thread: WireThread?,
     hasSummary: Boolean,
     requesting: Boolean,
-    canReply: Boolean
+    canReply: Boolean,
+    showStatusLine: Boolean
 ) {
     val scheme = MaterialTheme.colorScheme
     val color: Color
@@ -307,6 +318,8 @@ private fun ChatStatus(
         }
 
         else -> {
+            // Connected and live. Hidden unless the user turns the status line on in Settings.
+            if (!showStatusLine) return
             color = scheme.primary
             title = "Live through your phone"
             detail = "Your normal OpenBubbles account and encryption are used."
@@ -323,6 +336,7 @@ private fun ChatStatus(
 @Composable
 private fun MessageBubble(
     message: WireMessage,
+    timesAlways: Boolean,
     reverseReplySwipe: Boolean,
     media: WatchMedia?,
     requestingMedia: Boolean,
@@ -333,6 +347,8 @@ private fun MessageBubble(
     reacting: Boolean
 ) {
     val scheme = MaterialTheme.colorScheme
+    var timeShown by remember(message.id) { mutableStateOf(false) }
+    val showTime = timesAlways || timeShown
     val fromMe = message.fromMe
     val container = if (fromMe) Color(0xFF0066CC) else scheme.surfaceContainerHigh
     val content = if (fromMe) Color.White else scheme.onSurface
@@ -359,7 +375,7 @@ private fun MessageBubble(
                 .background(container)
                 .combinedClickable(
                     enabled = message.canReact || message.canReply,
-                    onClick = {},
+                    onClick = { timeShown = !timeShown },
                     onLongClick = onShowActions,
                     onLongClickLabel = "Reactions and reply"
                 )
@@ -410,14 +426,16 @@ private fun MessageBubble(
                 color = secondaryContent
             )
             if (reacting) Text("Reacting…", style = MaterialTheme.typography.labelSmall, color = secondaryContent)
-            Row(
+            val urgentStatus = message.status == "sending" || message.status == "queued" ||
+                message.status == "failed" || message.status == "unconfirmed"
+            if (showTime || urgentStatus) Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 2.dp),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
+                if (showTime) Text(
                     text = clockTime(message.timestamp),
                     style = MaterialTheme.typography.labelSmall,
                     color = secondaryContent
@@ -442,19 +460,19 @@ private fun MessageBubble(
                         fontWeight = FontWeight.SemiBold
                     )
 
-                    "sent" -> Text(
+                    "sent" -> if (showTime) Text(
                         text = " · Sent",
                         style = MaterialTheme.typography.labelSmall,
                         color = secondaryContent
                     )
 
-                    "delivered" -> Text(
+                    "delivered" -> if (showTime) Text(
                         text = " · Delivered",
                         style = MaterialTheme.typography.labelSmall,
                         color = secondaryContent
                     )
 
-                    "read" -> Text(
+                    "read" -> if (showTime) Text(
                         text = " · Read",
                         style = MaterialTheme.typography.labelSmall,
                         color = secondaryContent
@@ -574,7 +592,7 @@ private fun ChatActions(
     threadId: String,
     canReply: Boolean,
     requesting: Boolean,
-    onReply: () -> Unit,
+    onCompose: (ComposerInputMode) -> Unit,
     onOpenPhone: () -> Unit,
     onSendQueued: () -> Unit,
     onRefresh: () -> Unit,
@@ -585,17 +603,50 @@ private fun ChatActions(
     val sending = threadId in state.sendingThreads
     val queuedCount = state.queuedSends.count { it.threadId == threadId }
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Button(
-            onClick = onReply,
-            enabled = canReply && state.relayEnabled && !sending,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                when {
-                    canReply -> "Send message"
-                    else -> "Send unavailable"
+        if (canReply) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                FilledTonalButton(
+                    onClick = { onCompose(ComposerInputMode.Emoji) },
+                    enabled = state.relayEnabled && !sending,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.EmojiEmotions,
+                        contentDescription = "Send emoji"
+                    )
                 }
-            )
+                FilledTonalButton(
+                    onClick = { onCompose(ComposerInputMode.Voice) },
+                    enabled = state.relayEnabled && !sending,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Mic,
+                        contentDescription = "Voice message"
+                    )
+                }
+                FilledTonalButton(
+                    onClick = { onCompose(ComposerInputMode.Keyboard) },
+                    enabled = state.relayEnabled && !sending,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Keyboard,
+                        contentDescription = "Type message"
+                    )
+                }
+            }
+        } else {
+            Button(
+                onClick = {},
+                enabled = false,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Send unavailable")
+            }
         }
 
         if (!state.phoneOnline && canReply) {

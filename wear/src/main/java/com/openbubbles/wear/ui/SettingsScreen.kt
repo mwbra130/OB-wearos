@@ -40,6 +40,12 @@ fun SettingsScreen(
     state: WatchState,
     reverseReplySwipe: Boolean,
     onToggleReplySwipe: () -> Unit,
+    showChatStatus: Boolean,
+    onToggleChatStatus: () -> Unit,
+    timesAlways: Boolean,
+    onToggleTimesAlways: () -> Unit,
+    compactChatHeader: Boolean,
+    onToggleCompactChatHeader: () -> Unit,
     onBack: () -> Unit,
     onSync: () -> Unit,
     onOpenPhone: () -> Unit,
@@ -140,6 +146,43 @@ fun SettingsScreen(
                         Spacer(Modifier.height(6.dp))
                         Button(onClick = onToggleReplySwipe, modifier = Modifier.fillMaxWidth()) {
                             Text(if (reverseReplySwipe) "Use edge swipe" else "Use center swipe")
+                        }
+                    }
+                }
+
+                item {
+                    InfoCard {
+                        Text("Chat view", style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.height(6.dp))
+                        Text("Message times",
+                            style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
+                        Text(if (timesAlways) "Times are always shown under each message."
+                            else "Times stay hidden until you tap a message.",
+                            style = MaterialTheme.typography.bodyExtraSmall, color = scheme.onSurfaceVariant)
+                        Spacer(Modifier.height(4.dp))
+                        Button(onClick = onToggleTimesAlways, modifier = Modifier.fillMaxWidth()) {
+                            Text(if (timesAlways) "Show times on tap" else "Always show times")
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text("Connection status",
+                            style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
+                        Text(if (showChatStatus) "Chats show the connection status line."
+                            else "The status line at the top of chats is hidden.",
+                            style = MaterialTheme.typography.bodyExtraSmall, color = scheme.onSurfaceVariant)
+                        Spacer(Modifier.height(4.dp))
+                        Button(onClick = onToggleChatStatus, modifier = Modifier.fillMaxWidth()) {
+                            Text(if (showChatStatus) "Hide status line" else "Show status line")
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text("Chat header space",
+                            style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
+                        Text(if (compactChatHeader) "Small gap above the person's name."
+                            else "Original larger gap above the person's name.",
+                            style = MaterialTheme.typography.bodyExtraSmall, color = scheme.onSurfaceVariant)
+                        Spacer(Modifier.height(4.dp))
+                        Button(onClick = onToggleCompactChatHeader, modifier = Modifier.fillMaxWidth()) {
+                            Text(if (compactChatHeader) "Use original spacing" else "Use compact spacing")
                         }
                     }
                 }

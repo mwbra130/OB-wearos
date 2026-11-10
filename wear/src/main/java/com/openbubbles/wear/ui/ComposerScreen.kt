@@ -27,6 +27,7 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TextButton
 import androidx.wear.compose.material3.TimeText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,11 +47,21 @@ import com.openbubbles.wear.protocol.MessageReference
 
 private const val REPLY_INPUT_KEY = "openbubbles_wear_reply"
 
+enum class ComposerInputMode { Emoji, Voice, Keyboard }
+
+private val QUICK_EMOJIS = listOf(
+    "😀", "😂", "😍", "🤔",
+    "👍", "👏", "🙏", "💯",
+    "🔥", "🎉", "😮", "😢",
+    "😅", "😴", "✅", "❤️"
+)
+
 @Composable
 fun ComposerScreen(
     state: WatchState,
     threadId: String,
     replyToMessageId: String? = null,
+    inputMode: ComposerInputMode = ComposerInputMode.Keyboard,
     onBack: () -> Unit,
     onSent: () -> Unit,
     onDismissNotice: () -> Unit
@@ -87,6 +98,11 @@ fun ComposerScreen(
         RemoteInputIntentHelper.putTitleExtra(intent, if (replyTargetId == null) "Message $title" else "Reply to $title")
         runCatching { launcher.launch(intent) }
             .onFailure { voiceError = "Voice or keyboard input is not available on this watch." }
+    }
+
+    val autoLaunch = inputMode != ComposerInputMode.Emoji && replyToMessageId == null
+    LaunchedEffect(autoLaunch) {
+        if (autoLaunch && enabled) launchVoiceInput()
     }
 
     Box(
@@ -194,6 +210,31 @@ fun ComposerScreen(
 
                 val quickReplies = state.quickReplies.ifEmpty {
                     listOf("On my way", "Yes", "No", "Thanks!")
+                }
+
+                if (inputMode == ComposerInputMode.Emoji) {
+                    item(key = "emoji-grid") {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            QUICK_EMOJIS.chunked(4).forEach { rowEmojis ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    rowEmojis.forEach { emoji ->
+                                        FilledTonalButton(
+                                            onClick = {
+                                                if (WatchRepository.sendReply(threadId, emoji, replyTargetId)) onSent()
+                                            },
+                                            enabled = enabled && !sending,
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Text(emoji)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 item {

@@ -38,7 +38,11 @@ const val WATCH_APP_VERSION = "3.1.0"
 sealed interface WearScreen {
     data object Conversations : WearScreen
     data class Chat(val threadId: String) : WearScreen
-    data class Composer(val threadId: String, val replyToMessageId: String? = null) : WearScreen
+    data class Composer(
+        val threadId: String,
+        val replyToMessageId: String? = null,
+        val inputMode: ComposerInputMode = ComposerInputMode.Keyboard
+    ) : WearScreen
     data class Media(val threadId: String, val mediaId: String) : WearScreen
     data object FindChat : WearScreen
     data object Contacts : WearScreen
@@ -88,6 +92,9 @@ fun WearApp() {
     val context = LocalContext.current
     val uiPreferences = remember(context) { context.getSharedPreferences("watch_ui", Context.MODE_PRIVATE) }
     var reverseReplySwipe by remember { mutableStateOf(uiPreferences.getBoolean("reverse_reply_swipe", false)) }
+    var showChatStatus by remember { mutableStateOf(uiPreferences.getBoolean("show_chat_status", false)) }
+    var timesAlways by remember { mutableStateOf(uiPreferences.getBoolean("times_always", false)) }
+    var compactChatHeader by remember { mutableStateOf(uiPreferences.getBoolean("compact_chat_header", true)) }
     val state by WatchRepository.state.collectAsStateWithLifecycle()
     var stack by remember { mutableStateOf(listOf<WearScreen>(WearScreen.Conversations)) }
     val current = stack.last()
@@ -205,8 +212,11 @@ fun WearApp() {
                 state = state,
                 threadId = screen.threadId,
                 reverseReplySwipe = reverseReplySwipe,
+                showChatStatus = showChatStatus,
+                timesAlways = timesAlways,
+                compactChatHeader = compactChatHeader,
                 onBack = { pop() },
-                onReply = { push(WearScreen.Composer(screen.threadId)) },
+                onCompose = { mode -> push(WearScreen.Composer(screen.threadId, inputMode = mode)) },
                 onReplyToMessage = { messageId -> push(WearScreen.Composer(screen.threadId, messageId)) },
                 onOpenPhone = { WatchRepository.openOnPhone(screen.threadId) },
                 onOpenMedia = { mediaId ->
@@ -237,6 +247,7 @@ fun WearApp() {
                 state = state,
                 threadId = screen.threadId,
                 replyToMessageId = screen.replyToMessageId,
+                inputMode = screen.inputMode,
                 onBack = { pop() },
                 onSent = { pop() },
                 onDismissNotice = { WatchRepository.clearNotices() }
@@ -248,6 +259,21 @@ fun WearApp() {
                 onToggleReplySwipe = {
                     reverseReplySwipe = !reverseReplySwipe
                     uiPreferences.edit().putBoolean("reverse_reply_swipe", reverseReplySwipe).apply()
+                },
+                showChatStatus = showChatStatus,
+                onToggleChatStatus = {
+                    showChatStatus = !showChatStatus
+                    uiPreferences.edit().putBoolean("show_chat_status", showChatStatus).apply()
+                },
+                timesAlways = timesAlways,
+                onToggleTimesAlways = {
+                    timesAlways = !timesAlways
+                    uiPreferences.edit().putBoolean("times_always", timesAlways).apply()
+                },
+                compactChatHeader = compactChatHeader,
+                onToggleCompactChatHeader = {
+                    compactChatHeader = !compactChatHeader
+                    uiPreferences.edit().putBoolean("compact_chat_header", compactChatHeader).apply()
                 },
                 onBack = { pop() },
                 onSync = { WatchRepository.sync(context) },
