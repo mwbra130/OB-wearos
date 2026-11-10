@@ -74,11 +74,9 @@ fun ConversationListScreen(
                     available: Offset,
                     source: NestedScrollSource
                 ): Offset {
-                    if (source == NestedScrollSource.UserInput &&
-                        listState.firstVisibleItemIndex == 0 &&
-                        listState.firstVisibleItemScrollOffset == 0 &&
-                        available.y > 0f
-                    ) {
+                    // Leftover downward drag the column could not consume means it is
+                    // already scrolled to the very top: treat it as a pull to refresh.
+                    if (source == NestedScrollSource.UserInput && available.y > 0f) {
                         pullDistance += available.y
                         if (pullDistance > pullThresholdPx && !pullTriggered) {
                             pullTriggered = true
