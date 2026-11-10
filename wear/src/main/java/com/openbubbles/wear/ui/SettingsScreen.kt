@@ -46,6 +46,8 @@ fun SettingsScreen(
     onToggleTimesAlways: () -> Unit,
     compactChatHeader: Boolean,
     onToggleCompactChatHeader: () -> Unit,
+    onLoadFakeChats: () -> Unit,
+    onClearFakeChats: () -> Unit,
     onBack: () -> Unit,
     onSync: () -> Unit,
     onOpenPhone: () -> Unit,
@@ -183,6 +185,25 @@ fun SettingsScreen(
                         Spacer(Modifier.height(4.dp))
                         Button(onClick = onToggleCompactChatHeader, modifier = Modifier.fillMaxWidth()) {
                             Text(if (compactChatHeader) "Use original spacing" else "Use compact spacing")
+                        }
+                    }
+                }
+
+                item {
+                    InfoCard {
+                        Text("Test mode", style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.height(6.dp))
+                        Text("Load fake chats to check the screens without the phone. " +
+                            "Clearing them pulls your real chats back from the phone.",
+                            style = MaterialTheme.typography.bodyExtraSmall, color = scheme.onSurfaceVariant)
+                        Spacer(Modifier.height(6.dp))
+                        Button(onClick = onLoadFakeChats, modifier = Modifier.fillMaxWidth()) {
+                            Text("Load fake chats")
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        TextButton(onClick = onClearFakeChats, modifier = Modifier.fillMaxWidth()) {
+                            Text("Clear fake chats")
                         }
                     }
                 }

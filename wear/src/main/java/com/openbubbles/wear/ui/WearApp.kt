@@ -27,13 +27,14 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.wear.compose.material3.ColorScheme
 import androidx.wear.compose.material3.MaterialTheme
 import com.openbubbles.wear.WatchNavigation
+import com.openbubbles.wear.FakeChats
 import com.openbubbles.wear.WatchNotifications
 import com.openbubbles.wear.WatchRepository
 import com.openbubbles.wear.refreshVisibleConversations
 import com.openbubbles.wear.refreshVisibleDirectChat
 import kotlinx.coroutines.delay
 
-const val WATCH_APP_VERSION = "3.1.0"
+const val WATCH_APP_VERSION = "0.1.0"
 
 sealed interface WearScreen {
     data object Conversations : WearScreen
@@ -274,6 +275,11 @@ fun WearApp() {
                 onToggleCompactChatHeader = {
                     compactChatHeader = !compactChatHeader
                     uiPreferences.edit().putBoolean("compact_chat_header", compactChatHeader).apply()
+                },
+                onLoadFakeChats = { FakeChats.load() },
+                onClearFakeChats = {
+                    FakeChats.clear()
+                    WatchRepository.sync(context)
                 },
                 onBack = { pop() },
                 onSync = { WatchRepository.sync(context) },

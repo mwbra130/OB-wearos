@@ -114,11 +114,12 @@ fun ComposerScreen(
             ScalingLazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
+                autoCentering = null,
                 contentPadding = PaddingValues(
                     start = 8.dp,
                     end = 8.dp,
-                    top = 30.dp,
-                    bottom = 44.dp
+                    top = 10.dp,
+                    bottom = 16.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {

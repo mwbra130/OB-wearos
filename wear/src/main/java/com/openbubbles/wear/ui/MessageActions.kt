@@ -118,7 +118,8 @@ internal fun MessageActionsDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         ScalingLazyColumn(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).swipeToDismiss(onDismiss),
-            contentPadding = PaddingValues(horizontal = 18.dp, vertical = 28.dp),
+            autoCentering = null,
+            contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
