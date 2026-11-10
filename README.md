@@ -13,20 +13,9 @@ In watch Settings, use **Swipe to reply** to choose between swiping toward the e
 
 The bottom **Send message** button starts an ordinary message. Reaction notifications follow the existing phone and watch notification settings.
 
-## Build and test
+## APK FILE
 
-Use JDK 17 and an Android SDK with platform 35 installed. `local.properties` is machine-specific and is not checked in.
-
-```powershell
-.\gradlew.bat :protocol:test :wear:testDebugUnitTest
-.\gradlew.bat :wear:lintRelease :wear:assembleDebug
-```
-
-The default CI builds and uploads an unsigned debug APK. A signed release build is available only through a manual workflow run using the existing `KEYSTORE_PROPERTIES` and `RELEASE_KEYSTORE` repository secrets. Those secrets must represent the same key already used by the phone patch; do not generate or substitute a signing key for an update.
-
-The `testnotifier` module is a local test utility for producing sample OpenBubbles notifications. It is not part of the watch APK or CI release artifact.
-
-See [architecture and split maintenance](docs/ARCHITECTURE.md), [testing and release](docs/TESTING.md), and [historical 3.0.0 validation](docs/HISTORICAL-VALIDATION-3.0.0.md).
+Grab the latest pre-compiled application files from the **[Releases](../../releases)** page.
 
 OpenBubbles Wear is an independent project and is not affiliated with OpenBubbles.
 
